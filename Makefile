@@ -115,7 +115,7 @@ $(FW_BASE)/%.bin: $(TARGET_OUT) | $(FW_BASE)
 
 $(TARGET_OUT): $(APP_AR)
 	$(vecho) "LD $@"
-	$(Q) $(LD) -L$(SDK_LIBDIR) $(LD_SCRIPT) $(LDFLAGS) -Wl,--start-group $(LIBS) $(APP_AR) -Wl,--end-group -o $@  -Xlinker -Map=output.map 
+	$(Q) $(LD) -L$(SDK_LIBDIR) $(LD_SCRIPT) $(LDFLAGS) -Wl,--start-group $(LIBS) $(APP_AR) -Wl,--end-group -o $@  
 
 $(APP_AR): $(OBJ)
 	$(vecho) "AR $@"
@@ -130,7 +130,8 @@ $(FW_BASE):
 	$(Q) mkdir -p $@
 	
 html:
-	$(shell ./html/gen_includes.sh)
+	@echo "generating html includes..."
+	$(Q) $(shell ./html/gen_includes.sh)
 
 flash: $(FW_FILE_1) $(FW_FILE_2)
 	$(ESPTOOL) --port $(ESPPORT) --baud $(ESPBAUD) write_flash $(FW_FILE_1_ADDR) $(FW_FILE_1) $(FW_FILE_2_ADDR) $(FW_FILE_2)

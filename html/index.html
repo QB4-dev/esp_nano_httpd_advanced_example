@@ -77,7 +77,7 @@ function serialize(form) {
 function show_conn_info(esp_response){
 	var obj = JSON.parse(esp_response);
 	var info = document.getElementById("info_box");
-	var conn =(obj.conn == "GOT_IP")?"<b>CONNECTED OK</b>":obj.conn;
+	var conn =(obj.conn == "GOT_IP")?'<b>CONNECTED OK('+obj.addr+')</b>':obj.conn;
 	info.innerHTML = '<small> connect with '+obj.SSID+': '+conn+'</small><br>';
 	info.innerHTML+='<button type="button" onclick="wifi_scan()">Scan</button>';
 	info.innerHTML+='<button type="button" onclick="wifi_save_settings()">Save Config</button>';

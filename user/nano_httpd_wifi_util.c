@@ -33,13 +33,16 @@ static struct espconn  *wifi_scan_conn;
 
 static int js_wifi_scan_list(struct jsontree_context *js_ctx);
 
+static const char empty_str[] = "";
 static struct jsontree_string js_conn_info = JSONTREE_STRING("unknown");
 static struct jsontree_string js_ssid_info = JSONTREE_STRING("unknown");
-static struct jsontree_string js_save_info = JSONTREE_STRING("");
+static struct jsontree_string js_addr_info = JSONTREE_STRING(empty_str);
+static struct jsontree_string js_save_info = JSONTREE_STRING(empty_str);
 static struct jsontree_callback js_wifi_scan_cb = JSONTREE_CALLBACK(js_wifi_scan_list, NULL);
 JSONTREE_OBJECT(json_tree,
 	JSONTREE_PAIR("conn", &js_conn_info),
 	JSONTREE_PAIR("SSID", &js_ssid_info),
+	JSONTREE_PAIR("addr", &js_addr_info),
 	JSONTREE_PAIR("save", &js_save_info),
 	JSONTREE_PAIR("scan", &js_wifi_scan_cb),
 );
@@ -96,9 +99,11 @@ static int ICACHE_FLASH_ATTR js_wifi_scan_list(struct jsontree_context *js_ctx)
 }
 
 static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg){
-	static struct station_config station_conf;
+	static struct station_config station_config;
+	static struct ip_info ip_config;
 	struct jsontree_context js_ctx;
 	struct espconn *conn = arg;
+	static char ip_addr[20];
 	uint8_t st;
 	const char *conn_status[]= {
 		"IDLE",
@@ -112,8 +117,14 @@ static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg){
 	st = wifi_station_get_connect_status();
 	js_conn_info.value = conn_status[st];
 
-	wifi_station_get_config(&station_conf);
-	js_ssid_info.value = station_conf.ssid;
+	if(st == STATION_GOT_IP){
+		wifi_get_ip_info(STATION_IF, &ip_config);
+		os_sprintf(ip_addr,IPSTR,IP2STR(&ip_config.ip));
+		js_addr_info.value = ip_addr;
+	}
+
+	wifi_station_get_config(&station_config);
+	js_ssid_info.value = station_config.ssid;
 
 	json_tree_send(conn,1024);
 }
@@ -140,7 +151,8 @@ void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t l
     char *action;
 
     if(req == NULL || wifi_get_opmode() == SOFTAP_MODE) return resp_http_error(conn);
-    js_save_info.value = "";//reset save info text
+    js_addr_info.value = empty_str;//reset addr info text
+    js_save_info.value = empty_str;//reset save info text
 
     if(req->type == TYPE_GET && req->query != NULL){
 		param=strtok((char*)req->query,"&");
