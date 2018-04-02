@@ -1,0 +1,3 @@
+[submodule "esp_nano_httpd"]
+	path = esp_nano_httpd
+	url = https://github.com/QB4-dev/esp_nano_httpd
