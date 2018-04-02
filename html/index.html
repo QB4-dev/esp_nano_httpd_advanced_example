@@ -130,7 +130,7 @@ function wifi_scan() {
 				var link = obj.scan[i];
 				list+='<input type="radio"name="ssid"value="'+link.ssid+'">'+get_wifi_icon(50,50,link.rssi,link.auth)+link.ssid+'<br>';
 			}
-			list+='AP password:<br><input type="text" name="passwd" size="16"title="password 0-64 characters"><br>';
+			list+='AP password:<br><input type="text" name="passwd" size="15"title="password 0-64 characters"><br>';
 			list+='<button type="button" onclick="wifi_scan()">Scan</button>';
 			list+='<input type="submit" value="WiFi connect"></form>';
 			document.getElementById("info_box").innerHTML = list;

@@ -20,22 +20,21 @@ SOFTWARE.*/
 
 #include "nano_httpd_wifi_util.h"
 
-#include <ip_addr.h>
-#include <espconn.h>
-
 #include <osapi.h>
 #include <mem.h>
+#include <ip_addr.h>
+#include <espconn.h>
 #include <json/jsontree.h>
 #include "../esp_nano_httpd/esp_nano_httpd.h"
 
 static struct bss_info *bss_link; //scan list
-static struct espconn  *wifi_scan_conn;
+static struct espconn  *wifi_scan_conn; //to keep connection pointer for scan_done_cb
 
 static int js_wifi_scan_list(struct jsontree_context *js_ctx);
 
 static const char empty_str[] = "";
-static struct jsontree_string js_conn_info = JSONTREE_STRING("unknown");
-static struct jsontree_string js_ssid_info = JSONTREE_STRING("unknown");
+static struct jsontree_string js_conn_info = JSONTREE_STRING(empty_str);
+static struct jsontree_string js_ssid_info = JSONTREE_STRING(empty_str);
 static struct jsontree_string js_addr_info = JSONTREE_STRING(empty_str);
 static struct jsontree_string js_save_info = JSONTREE_STRING(empty_str);
 static struct jsontree_callback js_wifi_scan_cb = JSONTREE_CALLBACK(js_wifi_scan_list, NULL);
@@ -62,7 +61,8 @@ int ICACHE_FLASH_ATTR json_putchar(int c)
     return 0;
 }
 
-static void ICACHE_FLASH_ATTR json_tree_send(struct espconn *conn,uint32_t cache_size){
+static void ICACHE_FLASH_ATTR json_tree_send(struct espconn *conn,uint32_t cache_size)
+{
 	struct jsontree_context js_ctx;
 
 	json_cache.buff = (char *)os_zalloc(cache_size);
@@ -82,7 +82,6 @@ static int ICACHE_FLASH_ATTR js_wifi_scan_list(struct jsontree_context *js_ctx)
 {
 	const char *auth_mode[] = { "OPEN", "WEP", "WPA-PSK", "WPA2-PSK", "WPA-PSK/WPA2-PSK" };
 	char *link_info = (char*)os_malloc(256);
-
 	if(link_info == NULL) return -1;
 
 	jsontree_write_atom(js_ctx, "[");
@@ -98,7 +97,8 @@ static int ICACHE_FLASH_ATTR js_wifi_scan_list(struct jsontree_context *js_ctx)
     return 0;
 }
 
-static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg){
+static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg)
+{
 	static struct station_config station_config;
 	static struct ip_info ip_config;
 	struct jsontree_context js_ctx;
@@ -117,15 +117,12 @@ static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg){
 	st = wifi_station_get_connect_status();
 	js_conn_info.value = conn_status[st];
 
-	if(st == STATION_GOT_IP){
-		wifi_get_ip_info(STATION_IF, &ip_config);
-		os_sprintf(ip_addr,IPSTR,IP2STR(&ip_config.ip));
-		js_addr_info.value = ip_addr;
-	}
+	wifi_get_ip_info(STATION_IF, &ip_config);
+	os_sprintf(ip_addr,IPSTR,IP2STR(&ip_config.ip));
+	js_addr_info.value = ip_addr;
 
 	wifi_station_get_config(&station_config);
 	js_ssid_info.value = station_config.ssid;
-
 	json_tree_send(conn,1024);
 }
 
@@ -135,7 +132,6 @@ static void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status)
 	if(status != OK) return resp_http_error(wifi_scan_conn);
 
 	bss_link = (struct bss_info *)arg; //update bss_link list
-
 	json_tree_send(wifi_scan_conn,1024);
 }
 
@@ -143,7 +139,6 @@ static void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status)
 
 void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t len)
 {
-	static volatile os_timer_t check_timer;
     http_request_t *req = conn->reverse;
     struct station_config station_conf = {0};
     bool save_ok;
@@ -155,7 +150,7 @@ void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t l
     js_save_info.value = empty_str;//reset save info text
 
     if(req->type == TYPE_GET && req->query != NULL){
-		param=strtok((char*)req->query,"&");
+		param=strtok((char*)req->query,"&");     //read request query string
 		if( os_memcmp(param,"action=",7) == 0 ){
 			action = strchr(param,'=')+1;
 
@@ -164,12 +159,10 @@ void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t l
 				wifi_station_scan(NULL,wifi_scan_done);
 				return;
 			} else if( os_strcmp(action,"save") == 0){ //save current config
-				os_printf("save new WiFi config\n" );
 				wifi_station_get_config(&station_conf);
 				save_ok = wifi_station_set_config(&station_conf);
 				js_save_info.value = save_ok?"OK":"ERROR";
 			}
-
 		}
     } else if(req->type == TYPE_POST){
     	if(req->content == NULL) return resp_http_error(conn);
@@ -182,7 +175,7 @@ void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t l
 			else if( os_memcmp(param,"passwd=",7) == 0 )  //password value found
 				ets_strncpy(station_conf.password, strchr(param,'=')+1,64);
 		} while( (param=strtok(NULL,"&")) != NULL);
-		//now conect to network
+		//now connect to network
 		station_conf.bssid_set = 0; //do not look for specific router MAC address
 		wifi_station_disconnect();
 		wifi_station_set_config_current(&station_conf);
