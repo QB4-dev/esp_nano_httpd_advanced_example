@@ -32,7 +32,7 @@ ESPBAUD     ?= 921600
 TARGET		= app
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES		= user esp_nano_httpd
+MODULES		= user esp_nano_httpd esp_nano_httpd/util
 EXTRA_INCDIR    = include
 
 # libraries used in this project, mainly provided by the SDK

@@ -5,7 +5,7 @@
 #include <user_config.h>
 
 #include "../esp_nano_httpd/esp_nano_httpd.h"
-#include "nano_httpd_wifi_util.h"
+#include "../esp_nano_httpd/util/nano_httpd_wifi_util.h"
 #include "../html/include/index.h"
 
 static volatile os_timer_t blink_timer;
