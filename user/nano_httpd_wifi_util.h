@@ -25,7 +25,32 @@ SOFTWARE.*/
 #include <c_types.h>
 #include <user_interface.h>
 
-void wifi_callback(struct espconn *conn, void *arg, uint32_t len);
+/*
+This callback is used to configure ESP8266 WiFi settings.
+To use it add something like that in esp_nano_httpd URL table:
+const http_callback_t url_cfg[] = {
+	{"/wifi", wifi_callback, NULL, 0},
+	{0,0,0,0}
+};
 
+Supported actions(CGI like) very handy for javascript  xhttp requests
+GET  request: /wifi				return current connection info
+GET  request: /wifi?action=scan	scan for available networks
+POST request: /wifi  	        connect to network(POST request content: ssid=MY_SSID&passwd=MY_PASSWD)
+GET  request: /wifi?action=save	save current WiFi config
+
+Example response data(json format):
+{
+	"conn":"GOT_IP",
+	"SSID":"Dom",
+	"addr":"",
+	"save":"",
+	"scan":[
+		{"ssid":"Dom","auth":"WPA-PSK/WPA2-PSK","rssi":-71},
+		{"ssid":"PENTAGRAM_P_6351","auth":"OPEN","rssi":-35}
+	]
+}
+*/
+void wifi_callback(struct espconn *conn, void *arg, uint32_t len);
 
 #endif /* USER_NANO_HTTPD_WIFI_UTIL_H_ */

@@ -94,7 +94,7 @@ static int ICACHE_FLASH_ATTR js_wifi_scan_list(struct jsontree_context *js_ctx)
 	}
 	jsontree_write_atom(js_ctx, "]");
 	os_free(link_info);
-    return 0;
+	return 0;
 }
 
 static void ICACHE_FLASH_ATTR resp_wifi_conn_status(void *arg)
@@ -165,7 +165,7 @@ void ICACHE_FLASH_ATTR wifi_callback(struct espconn *conn, void *arg, uint32_t l
 			}
 		}
     } else if(req->type == TYPE_POST){
-    	if(req->content == NULL) return resp_http_error(conn);
+		if(req->content == NULL) return resp_http_error(conn);
 		/* in request content We expect serialized input form query like: ssid=MY_SSID&passwd=MY_PASSWD
 		Use strtok to divide query into tokens*/
 		param=strtok(req->content,"&");
