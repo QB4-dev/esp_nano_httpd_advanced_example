@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>WiFi</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+</head>
+<body style="font-family:Arial;">
+<h3>WiFi Settings</h3>
+<div id="info_box">
+<button type="button" onclick="wifi_scan()">Scan</button>
+</div>
+<br>
+
+<script>
+function get_wifi_icon(x,y,rssi,auth){
+	var icon = '<svg viewBox="0 -20 100 100" width="'+x+'" height="'+y+'">';
+	icon += '<g><circle style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.5"cx="18.5"cy="72"r="7"/>';
+	if(rssi > -80){
+		icon += '<path style="fill:none;stroke:#000000;stroke-width:6"'+
+		'sodipodi:type="arc"' +
+		'sodipodi:cx="15"sodipodi:cy="75"'+
+		'sodipodi:rx="20"sodipodi:ry="20"'+
+		'sodipodi:start="4.7"sodipodi:end="0"'+
+		'd="M 14.75,55.00 A 20,20 0 0 1 29.05,60.77 20,20 0 0 1 35,75"'+
+		'sodipodi:open="true" />';
+	}	
+	if(rssi > -70){
+	   icon += '<path style="fill:none;stroke:#000000;stroke-width:6"'+ 
+	       'sodipodi:type="arc"' +
+	       'sodipodi:cx="15" sodipodi:cy="75"' +
+	       'sodipodi:rx="30" sodipodi:ry="30"' +
+	       'sodipodi:start="4.7" sodipodi:end="0"' +
+	       'd="M 14.63,45.00 A 30,30 0 0 1 36.0,53.66 30,30 0 0 1 45,75"'+
+	       'sodipodi:open="true" />';
+	}
+	if(rssi > -67){
+		icon += '<path style="fill:none;stroke:#000000;stroke-width:6"'+
+       		'sodipodi:type="arc"'+
+		'sodipodi:cx="15" sodipodi:cy="75"'+
+		'sodipodi:rx="40" sodipodi:ry="40"'+
+		'sodipodi:start="4.7" sodipodi:end="0"'+
+		'd="M 14.504453,35.00307 A 40,40 0 0 1 43.108523,46.541066 40,40 0 0 1 55,75"'+
+		'sodipodi:open="true"/>';
+	}
+	if(auth != "OPEN"){
+		icon += '<rect style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1"width="20" height="14" x="51" y="32"/>';
+		icon += '<ellipse style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:3"cx="61"cy="31"rx="7.5"ry="9"/>';
+	}
+	icon += '</g></svg>';
+	return icon;
+}
+
+function serialize(form) {
+	    var field, l, s = [];
+	    if (typeof form == 'object' && form.nodeName == "FORM") {
+	        var len = form.elements.length;
+	        for (var i=0; i<len; i++) {
+	            field = form.elements[i];
+	            if (field.name && !field.disabled && field.type != 'file' && field.type != 'reset' && field.type != 'submit' && field.type != 'button') {
+	                if (field.type == 'select-multiple') {
+	                    l = form.elements[i].options.length; 
+	                    for (var j=0; j<l; j++) {
+	                        if(field.options[j].selected)
+	                            s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
+	                    }
+	                } else if ((field.type != 'checkbox' && field.type != 'radio') || field.checked) {
+	                    s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
+	                }
+	            }
+	        }
+	    }
+	    return s.join('&').replace(/%20/g, '+');
+	}
+
+function show_conn_info(esp_response){
+	var obj = JSON.parse(esp_response);
+	var info = document.getElementById("info_box");
+	var conn =(obj.conn == "GOT_IP")?"<b>CONNECTED OK</b>":obj.conn;
+	info.innerHTML = '<small> connect with '+obj.SSID+': '+conn+'</small><br>';
+	info.innerHTML+='<button type="button" onclick="wifi_scan()">Scan</button>';
+	info.innerHTML+='<button type="button" onclick="wifi_save_settings()">Save Config</button>';
+	if(obj.save != "")info.innerHTML+='<small> settings write:'+obj.save+'</small><br>';
+}
+
+function wifi_connect_check() {
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200) show_conn_info(this.responseText);
+	};
+	xhttp.open("GET","/wifi", true);
+	xhttp.send();
+}
+
+function wifi_save_settings() {
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200) show_conn_info(this.responseText);
+	};
+	xhttp.open("GET","/wifi?action=save", true);
+	xhttp.send();
+}
+
+function wifi_connect(event) {
+	event.preventDefault();
+	var form = document.getElementById("wifi_form");
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200){
+			show_conn_info(this.responseText);
+			check_tim = setInterval(wifi_connect_check,3000);
+		}
+	};
+	xhttp.open("POST","/wifi", true);
+	xhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	xhttp.send(serialize(form)); 
+	document.getElementById("info_box").innerHTML = "connect...";
+}
+
+function wifi_scan() {
+	if(typeof check_tim !== 'undefined')clearTimeout(check_tim);
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200){
+			var obj = JSON.parse(this.responseText);
+			var list= 'select AP:<br>';
+			list+='<form method="post" id="wifi_form" action="/wifi">';
+			for (i = 0; i < obj.scan.length; i++){
+				var link = obj.scan[i];
+				list+='<input type="radio"name="ssid"value="'+link.ssid+'">'+get_wifi_icon(50,50,link.rssi,link.auth)+link.ssid+'<br>';
+			}
+			list+='AP password:<br><input type="text" name="passwd" size="16"title="password 0-64 characters"><br>';
+			list+='<button type="button" onclick="wifi_scan()">Scan</button>';
+			list+='<input type="submit" value="WiFi connect"></form>';
+			document.getElementById("info_box").innerHTML = list;
+			var form = document.getElementById("wifi_form");
+			form.addEventListener("submit", wifi_connect, true);
+		}
+	};
+	document.getElementById("info_box").innerHTML = "scan...";
+	xhttp.open("GET","/wifi?action=scan", true);
+	xhttp.send();
+}
+</script>
+
+</body>
+</html>
