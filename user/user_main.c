@@ -19,19 +19,17 @@ void blink_fun(void *arg)
 }
 
 
-void ICACHE_FLASH_ATTR led_demo_cb(struct espconn *conn, void *arg, uint32_t len)
+void ICACHE_FLASH_ATTR led_demo_callback(struct espconn *conn, void *arg, uint32_t len)
 {
 	uint32_t freq;
 	char *param;
 	http_request_t *req = conn->reverse;
 
-	if(req == NULL || req->type != TYPE_GET || req->query == NULL){
-	resp_http_error(conn);
-	return; //handle GET request
-	}
+	//handle only GET request with query
+	if(req == NULL || req->type != TYPE_GET || req->query == NULL) return resp_http_error(conn);
 
 	param=strtok((char*)req->query,"&");
-	if( os_memcmp(param,"led_freq=",9) == 0 ){         //led frequency
+	if( os_memcmp(param,"led_freq=",9) == 0 ){  //led frequency request
 		freq = atoi(strchr(param,'=')+1);
 		if(freq != 0){
 			os_timer_disarm(&blink_timer);
@@ -46,6 +44,7 @@ void ICACHE_FLASH_ATTR led_demo_cb(struct espconn *conn, void *arg, uint32_t len
 // URL config table
 const http_callback_t url_cfg[] = {
 	{"/", send_html, index_html, sizeof(index_html)},
+	{"/led",  led_demo_callback, NULL, 0},
 	{"/wifi", wifi_callback, NULL, 0},
 	{0,0,0,0}
 };
@@ -62,5 +61,5 @@ void ICACHE_FLASH_ATTR user_init()
     os_timer_arm(&blink_timer, 1000, 1);
     
     esp_nano_httpd_register_content(url_cfg);
-    esp_nano_httpd_init(STATIONAP_MODE);
+    esp_nano_httpd_init_AP(STATIONAP_MODE);
 }

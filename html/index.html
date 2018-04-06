@@ -12,8 +12,45 @@
 <button type="button" onclick="wifi_scan()">Scan</button>
 </div>
 <br>
-
+<h3>LED demo</h3>
+<form method="post" id="led_form">
+	Set led frequency
+	<input type="number" name="led_freq" min="1" max="20" value="2">
+	<input type="submit" value="set LED freq"> 
+</form>
 <script>
+led_form = document.getElementById("led_form");
+led_form.addEventListener("submit", set_led, true);
+
+function set_led(event) {
+	event.preventDefault();
+	var xhttp = new XMLHttpRequest();
+	xhttp.open("GET","/led?"+serialize(led_form), true);
+	xhttp.send(); 
+}			
+
+function serialize(form) {
+    var field, l, s = [];
+    if (typeof form == 'object' && form.nodeName == "FORM") {
+        var len = form.elements.length;
+        for (var i=0; i<len; i++) {
+            field = form.elements[i];
+            if (field.name && !field.disabled && field.type != 'file' && field.type != 'reset' && field.type != 'submit' && field.type != 'button') {
+                if (field.type == 'select-multiple') {
+                    l = form.elements[i].options.length; 
+                    for (var j=0; j<l; j++) {
+                        if(field.options[j].selected)
+                            s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
+                    }
+                } else if ((field.type != 'checkbox' && field.type != 'radio') || field.checked) {
+                    s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
+                }
+            }
+        }
+    }
+    return s.join('&').replace(/%20/g, '+');
+}
+
 function get_wifi_icon(x,y,rssi,auth){
 	var icon = '<svg viewBox="0 -20 100 100" width="'+x+'" height="'+y+'">';
 	icon += '<g><circle style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.5"cx="18.5"cy="72"r="7"/>';
@@ -52,27 +89,6 @@ function get_wifi_icon(x,y,rssi,auth){
 	return icon;
 }
 
-function serialize(form) {
-	    var field, l, s = [];
-	    if (typeof form == 'object' && form.nodeName == "FORM") {
-	        var len = form.elements.length;
-	        for (var i=0; i<len; i++) {
-	            field = form.elements[i];
-	            if (field.name && !field.disabled && field.type != 'file' && field.type != 'reset' && field.type != 'submit' && field.type != 'button') {
-	                if (field.type == 'select-multiple') {
-	                    l = form.elements[i].options.length; 
-	                    for (var j=0; j<l; j++) {
-	                        if(field.options[j].selected)
-	                            s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
-	                    }
-	                } else if ((field.type != 'checkbox' && field.type != 'radio') || field.checked) {
-	                    s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
-	                }
-	            }
-	        }
-	    }
-	    return s.join('&').replace(/%20/g, '+');
-	}
 
 function show_conn_info(esp_response){
 	var obj = JSON.parse(esp_response);
