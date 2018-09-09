@@ -61,5 +61,5 @@ void ICACHE_FLASH_ATTR user_init()
     os_timer_arm(&blink_timer, 1000, 1);
     
     esp_nano_httpd_register_content(url_cfg);
-    esp_nano_httpd_init_AP(STATIONAP_MODE);
+    esp_nano_httpd_init_AP(STATIONAP_MODE,"ESP-LED");
 }
