@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.177356134/PATH/delimiter=\:
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.177356134/PATH/operation=replace
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.177356134/PATH/value=/bin\:/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/usr/games\:/usr/local/games\:/snap/bin\:/opt/esp-open-sdk/xtensa-lx106-elf/bin
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.177356134/append=true
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.177356134/appendContributed=true
