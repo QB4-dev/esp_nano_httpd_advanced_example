@@ -109,29 +109,29 @@ endef
 
 all: checkdirs html $(TARGET_OUT) $(FW_FILE_1) $(FW_FILE_2)
 
-$(FW_BASE)/%.bin: $(TARGET_OUT) | $(FW_BASE)
-	$(vecho) "FW $(FW_BASE)/"
-	$(Q) $(ESPTOOL) elf2image -o $(FW_BASE)/ $(TARGET_OUT)
+$(FW_BASE):
+	$(Q) mkdir -p $@
 
-$(TARGET_OUT): $(APP_AR)
-	$(vecho) "LD $@"
-	$(Q) $(LD) -L$(SDK_LIBDIR) $(LD_SCRIPT) $(LDFLAGS) -Wl,--start-group $(LIBS) $(APP_AR) -Wl,--end-group -o $@  
+$(BUILD_DIR):
+	$(Q) mkdir -p $@
+
+checkdirs: $(BUILD_DIR) $(FW_BASE)
+
+html:
+	$(vecho) "SH generating html includes..."
+	$(Q) $(shell ./html/gen_includes.sh)
 
 $(APP_AR): $(OBJ)
 	$(vecho) "AR $@"
 	$(Q) $(AR) cru $@ $^
 
-checkdirs: $(BUILD_DIR) $(FW_BASE)
+$(TARGET_OUT): $(APP_AR)
+	$(vecho) "LD $@"
+	$(Q) $(LD) -L$(SDK_LIBDIR) $(LD_SCRIPT) $(LDFLAGS) -Wl,--start-group $(LIBS) $(APP_AR) -Wl,--end-group -o $@  
 
-$(BUILD_DIR):
-	$(Q) mkdir -p $@
-
-$(FW_BASE):
-	$(Q) mkdir -p $@
-	
-html:
-	@echo "generating html includes..."
-	$(Q) $(shell ./html/gen_includes.sh)
+$(FW_BASE)/%.bin: $(TARGET_OUT) $(FW_BASE)
+	$(vecho) "FW $(FW_BASE)/"
+	$(Q) $(ESPTOOL) elf2image -o $(FW_BASE)/ $(TARGET_OUT)
 
 flash: $(FW_FILE_1) $(FW_FILE_2)
 	$(ESPTOOL) --port $(ESPPORT) --baud $(ESPBAUD) write_flash $(FW_FILE_1_ADDR) $(FW_FILE_1) $(FW_FILE_2_ADDR) $(FW_FILE_2)
